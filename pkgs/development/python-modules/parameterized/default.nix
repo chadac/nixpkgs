@@ -1,41 +1,45 @@
 { lib
 , buildPythonPackage
-, fetchPypi
+, fetchFromGitHub
 , mock
 , nose
+, nose2
 , pytestCheckHook
 , pythonOlder
+, setuptools
 }:
 
 buildPythonPackage rec {
   pname = "parameterized";
   version = "0.8.1";
-  format = "setuptools";
+  format = "pyproject";
 
   disabled = pythonOlder "3.7";
 
-  src = fetchPypi {
-    inherit pname version;
-    hash = "sha256-Qbv/N9YYZDD3f5ANd35btqJJKKHEb7HeaS+LUriDO1w=";
+  src = fetchFromGitHub {
+    owner = "wolever";
+    repo = "parameterized";
+    rev = "e383e1e18d891fd74feef70fd3a70e1ec87fc7e8";
+    hash = "sha256-/S5kt6h+8Q1YneU3WhC93UkM5z4PJv2Ak+LHoT6uPzc=";
   };
+
+  nativeBuildInputs = [
+    setuptools
+  ];
 
   checkInputs = [
     mock
+  ] ++ lib.optionals (pythonOlder "3.10") [
     nose
-    pytestCheckHook
   ];
 
-  pytestFlagsArray = [
-    "parameterized/test.py"
-  ];
+  checkPhase = ''
+    runHook preCheck
 
-  disabledTests = [
-    # Tests seem outdated
-    "test_method"
-    "test_with_docstring_0_value1"
-    "test_with_docstring_1_v_l_"
-    "testCamelCaseMethodC"
-  ];
+    python -m unittest parameterized/test.py
+
+    runHook postCheck
+  '';
 
   pythonImportsCheck = [
     "parameterized"
